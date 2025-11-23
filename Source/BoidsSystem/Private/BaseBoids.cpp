@@ -25,8 +25,6 @@ ABaseBoids::ABaseBoids()
 		FMath::RandRange(-1.0f, 1.0f),
 		FMath::RandRange(-1.0f, 1.0f)
 	).GetSafeNormal() * MaxSpeed * 0.5f;
-
-	TraceAvoidanceForce = FVector::ZeroVector;
 }
 
 // Called when the game starts or when spawned
@@ -158,11 +156,13 @@ FVector ABaseBoids::CalculateSeparation()
 	//		SeparationForce += AwayFromOther * Strength;
 	//		Count++;
 	//	}
-	//}
+	//}]
 
 	TArray<FHitResult> HitResults;
 	FCollisionShape SphereShape = FCollisionShape::MakeSphere(AvoidanceRadius);
 	FCollisionQueryParams QueryParams;
+
+	TraceAvoidanceForce = FVector::ZeroVector;
 	QueryParams.AddIgnoredActor(this);
 
 	GetWorld()->SweepMultiByChannel(
@@ -170,12 +170,11 @@ FVector ABaseBoids::CalculateSeparation()
 		CurrentLocation,
 		CurrentLocation,
 		FQuat::Identity,
-		ECC_WorldStatic,
+		ECC_Visibility,
 		SphereShape,
 		QueryParams
 	);
 
-	// Add separation from obstacles
 	for (const FHitResult& Hit : HitResults)
 	{
 		if (Hit.GetActor() && Hit.GetActor() != this)
@@ -244,7 +243,8 @@ void ABaseBoids::Tick(float DeltaTime)
 	Velocity = LimitVector(Velocity, MaxSpeed);
 
 	FVector NewLocation = CurrentLocation + (Velocity * DeltaTime);
-	SetActorLocation(NewLocation);
+
+	SetActorLocation(NewLocation, true);
 
 	if (!Velocity.IsNearlyZero())
 	{
